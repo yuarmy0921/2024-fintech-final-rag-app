@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "2024-fintech-final-rag-app"
+version = "0.1.0"
+description = ""
+authors = ["r12922064@csie.ntu.edu.tw>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+neo4j = "^5.23.1"
+pypdf3 = "^1.0.6"
+langchain = "^0.2.12"
+python-dotenv = "^1.0.1"
+langchain-community = "^0.2.11"
+beautifulsoup4 = "^4.12.3"
+google-generativeai = "0.7.2"
+langchain-google-genai = "1.0.10"
+langchainhub = "^0.1.21"
+langsmith = "^0.1.137"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
