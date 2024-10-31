@@ -17,6 +17,13 @@ google-generativeai = "0.7.2"
 langchain-google-genai = "1.0.10"
 langchainhub = "^0.1.21"
 langsmith = "^0.1.137"
+pytesseract = "^0.3.13"
+pdfplumber = "^0.11.4"
+pdf2docx = "^0.5.8"
+spire-doc = "^12.7.1"
+matplotlib = "^3.9.2"
+pyqt6 = "^6.7.1"
+pandas = "^2.2.3"
 
 
 [tool.poetry.group.dev.dependencies]
