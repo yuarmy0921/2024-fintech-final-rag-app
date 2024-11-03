@@ -16,6 +16,14 @@ import cv2
 import pytesseract
 import matplotlib.pyplot as plt
 
+from dotenv import load_dotenv
+import os
+
+import warnings
+warnings.filterwarnings("ignore")
+
+import google.generativeai as genai
+
 class PDFProcessor:
     def __init__(self):
         self.raw_dir = 'data/raw'
@@ -185,9 +193,40 @@ class PDFProcessor:
         pdf.close()  # 關閉PDF文件
 
         return pdf_text  # 返回萃取出的文本
+    
+    # def test(self):
+    #     import pymupdf4llm
+    #     pdf = '/home/yuarmy/vaults/1131-course/fintech/final/2024-fintech-final-rag-app/data/raw/finance/13.pdf'
+
+    #     md_text = pymupdf4llm.to_markdown(pdf)
+    #     with open('test.md', 'w') as f:
+    #         f.write(md_text)
+    #     print(md_text)
+
+
+class GeminiAPI:
+    def __init__(self, model='models/embedding-001'):
+        load_dotenv('.env', override=True)
+
+        key = os.getenv('GEMINI_API_KEY')
+        genai.configure(api_key=key)
+
+        self.model = model
+
+    def get_text_embedding(self, args: dict, task='retrieval_document'):
+        if task == 'retrieval_document':
+            response = genai.embed_content(
+            model=self.model, 
+            content=args['content'], 
+            task_type='retrieval_document',
+            title=args['title']
+        )
+            
+        return response['embedding']
 
 if __name__ == '__main__':
     processor = PDFProcessor()
-    processor.read_pdf()
+    # processor.read_pdf()
     # processor.extract_content('finance', '162.pdf')
     # processor._extract_text_from_img()
+    processor.test()

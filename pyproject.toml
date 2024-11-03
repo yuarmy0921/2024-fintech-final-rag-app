@@ -24,6 +24,7 @@ spire-doc = "^12.7.1"
 matplotlib = "^3.9.2"
 pyqt6 = "^6.7.1"
 pandas = "^2.2.3"
+pymupdf4llm = "^0.0.17"
 
 
 [tool.poetry.group.dev.dependencies]
