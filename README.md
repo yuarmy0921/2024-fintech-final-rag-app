@@ -16,7 +16,7 @@ Install Tesseract OCR 5 on user system. I expect you to use an Ubuntu system:
 
 Running the virtual environment:
 ```
-portry shell
+poetry shell
 ```
 
 ## Database Preparation
