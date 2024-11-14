@@ -1,5 +1,5 @@
 # 2024-fintech-final-rag-app
-## Installation
+## 1. Installation
 
 Install Poetry if you haven't already:
 ```
@@ -19,7 +19,7 @@ Running the virtual environment:
 poetry shell
 ```
 
-## Database Preparation
+## 2. Database Preparation
 You can skip [data preprocessing](#data-preprocessing) by just importing the database snapshot (`Preprocess/neo4j.backup`). Follow the steps provided in the docs: [Importing an existing database](https://neo4j.com/docs/aura/auradb/importing/import-database/)
 
 ### Access to Neo4j AuraDB and GCP
@@ -70,7 +70,7 @@ cd Preprocess && python3 db.py
 ```
 Make sure to use an Ubuntu system, or some errors wiil occur during the execution. 
 
-## Answer Retrieval
+## 3. Answer Retrieval
 ```
 cd Retrieval && python3 qa.py --question {YOUR_QUESTION_JSON_FILE} --pred {YOUR_OUTPUT_JSON_FILE}
 ```
