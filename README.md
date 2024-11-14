@@ -71,6 +71,9 @@ cd Preprocess && python3 db.py
 Make sure to use an Ubuntu system, or some errors wiil occur during the execution. 
 
 ## 3. Answer Retrieval
+### Vector cosine similarity apporach
 ```
 cd Retrieval && python3 qa.py --question {YOUR_QUESTION_JSON_FILE} --pred {YOUR_OUTPUT_JSON_FILE}
 ```
+
+## 4. Get Final Prediction
