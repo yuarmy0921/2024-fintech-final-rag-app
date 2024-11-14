@@ -25,6 +25,10 @@ matplotlib = "^3.9.2"
 pyqt6 = "^6.7.1"
 pandas = "^2.2.3"
 pymupdf4llm = "^0.0.17"
+ocrmypdf = "^16.6.0"
+google-cloud-aiplatform = "^1.71.1"
+google-cloud-api-keys = "^0.5.13"
+google-cloud-discoveryengine = "^0.13.3"
 
 
 [tool.poetry.group.dev.dependencies]
