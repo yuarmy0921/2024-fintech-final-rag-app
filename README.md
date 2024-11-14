@@ -67,13 +67,27 @@ data
 3. Preprocessing data
 ```
 cd Preprocess && python3 db.py
+python3 ocr.py # OCR the document
 ```
-Make sure to use an Ubuntu system, or some errors wiil occur during the execution. 
+Make sure to use an Ubuntu system, or some errors wiil occur during the execution.
 
 ## 3. Answer Retrieval
-### Vector cosine similarity approach
+
+### LLM approach
+For insurance and finance.
+
 ```
-cd Retrieval && python3 qa.py --question {YOUR_QUESTION_JSON_FILE} --pred {YOUR_OUTPUT_JSON_FILE}
+cd Retrieval
+python3 gemini-naive.py
+```
+
+### Vector cosine similarity approach
+For FAQ.
+
+```
+cd Retrieval && python3 qa.py --question {YOUR_QUESTION_JSON_FILE} --pred {YOUR_OUTPUT_JSON_FILE} # FAQ
 ```
 
 ## 4. Get Final Prediction
+
+Then merge the results from two scripts.

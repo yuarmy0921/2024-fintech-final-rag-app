@@ -6,23 +6,32 @@ import json
 import os, sys
 import pdfplumber
 
-BASE = Path("./final_project_dataset")
+BASE = Path("../final_project_dataset")
 PROMPT2 = """請再重新想一次。如果你認同之前的判斷，請告訴我最能回答此問題的文本編號。
 如果你不認同上述判斷，請再次判斷後，選出能回答此問題的文本編號。
 記得，只會有正好一個答案。如果有多個可能的答案，選一個最合適的。回應編號即可，不要有其他文字。"""
+
 API_KEY = ""
 genai.configure(api_key = API_KEY)
 
 faq_data = json.loads((BASE / "reference" / "faq" / "pid_map_content.json").read_text())
-question_data = json.loads((BASE / "dataset" / "preliminary" / "questions_example.json").read_text())
-ground_truths = json.loads((BASE / "dataset" / "preliminary" / "ground_truths_example.json").read_text())["ground_truths"]
-ground_truths = {item['qid']: item['retrieve'] for item in ground_truths}
+question_data = json.loads(Path("../questions_preliminary.json").read_text())
 
 # Initialize Gemini Model
 model = genai.GenerativeModel('gemini-1.5-flash')
-generation_config = genai.GenerationConfig(temperature=0.0, top_p=0.5, max_output_tokens=1024)
 
 def read_pdf(pdf_loc, page_infos: list = None):
+    """
+    Reads text from a PDF file between specified page indices.
+
+    Args:
+        pdf_loc (Path): Path to the PDF file to be read.
+        page_infos (list, optional): List containing start and end page indices to read.
+                                     If None, reads all pages.
+
+    Returns:
+        str: Extracted text from the specified PDF pages.
+    """
     pdf = pdfplumber.open(pdf_loc)
 
     pages = pdf.pages[page_infos[0]:page_infos[1]] if page_infos else pdf.pages
@@ -38,6 +47,17 @@ def read_pdf(pdf_loc, page_infos: list = None):
 
 # Function to generate a prompt for multiple contents
 def generate_prompt_1(question, contents):
+    """
+    Generates a prompt for language model evaluation by consolidating
+    question and content information from various text sources.
+
+    Args:
+        question (str): The question to be answered.
+        contents (dict): Dictionary of content keyed by content ID.
+
+    Returns:
+        str: Formatted prompt string for language model processing.
+    """
     prompt = f"這是一個問題：「{question}」。\n以下是幾個檔案中的文本，請逐一判斷每個文本是否包含可以回答這個問題的資訊，並回答「是」或「否」。如果回答「是」，請提取相關的句子並解釋為什麼這個文本可以回應問題。\n\n"
     for key, content in contents.items():
         prompt += f"文本 {key}：\n```\n{content}\n```\n\n\n"
@@ -46,24 +66,20 @@ def generate_prompt_1(question, contents):
     prompt += f"請詳細閱讀上列文本（{document_list_str}），並討論每個文本是否可以回答問題：「{question}」，以及為什麼。"
     return prompt
 
-# def generate_prompt_2(question, contents, last_result):
-#     prompt = f"這是一個問題：「{question}」。\n以下是幾個檔案中的文本，請逐一判斷每個文本是否包含可以回答這個問題的資訊。\n\n"
-#     for key, content in contents.items():
-#         prompt += f"文本 {key}：\n```\n{content}\n```\n\n\n"
-
-#     prompt += f"""這是之前我收到的回應：
-# ```
-# {last_result}
-# ```
-
-# 如果你認同上面的判斷，請告訴我最能回答此問題的文本編號。
-# 回應編號即可，不要有其他文字。
-# """
-
-#     return prompt
-
 # Function to analyze files in batch
 def analyze_files_in_batch(question, file_ids, category, ground_truth=None):
+    """
+    Analyzes multiple files to find content most relevant to answering the question.
+
+    Args:
+        question (str): The question being evaluated.
+        file_ids (list): List of file IDs to analyze.
+        category (str): The category of files being processed (e.g., "faq").
+        ground_truth (int, optional): Expected file ID containing the answer (for validation).
+
+    Returns:
+        int: File ID identified as containing the best answer, or zero if not found.
+    """
     contents = {}
 
     # Load content from all files
@@ -98,7 +114,7 @@ def analyze_files_in_batch(question, file_ids, category, ground_truth=None):
     except ValueError:
         print(f"'{response_text2}' is not an int。")
 
-    if number != ground_truth:
+    if (ground_truth is not None) and number != ground_truth:
         print("Wrong answer detected.")
         print(f"{question=}")
         print("prompt1")
@@ -114,6 +130,16 @@ def analyze_files_in_batch(question, file_ids, category, ground_truth=None):
     return number
 
 def calculate_accuracy(results, ground_truths):
+    """
+    Calculates accuracy of predicted results against known ground truths.
+
+    Args:
+        results (dict): Dictionary of results keyed by question ID.
+        ground_truths (dict): Dictionary of ground truths keyed by question ID.
+
+    Returns:
+        float: Accuracy of predictions as a percentage.
+    """
     correct = 0
     total = 0
 
@@ -129,19 +155,38 @@ def calculate_accuracy(results, ground_truths):
     return correct / total if total != 0 else 0
 
 def load_progress(filename):
+    """
+    Loads progress from a JSON file if it exists.
+
+    Args:
+        filename (str): Path to the progress file.
+
+    Returns:
+        dict: Dictionary containing the question IDs and retrieved answers.
+    """
     if os.path.exists(filename):
         with open(filename, 'r') as f:
-            results = json.load(f)
-            results = {int(qid): result for qid, result in results.items()}
+            data = json.load(f)
+            return {entry["qid"]: entry["retrieve"] for entry in data["answers"]}
     return {}
 
 def save_progress(filename, data):
+    """
+    Saves progress to a JSON file.
+
+    Args:
+        filename (str): Path to save the progress file.
+        data (dict): Dictionary containing question IDs and retrieved answers.
+    """
+    answers = [{"qid": qid, "retrieve": retrieve} for qid, retrieve in data.items()]
     with open(filename, 'w') as f:
-        json.dump(data, f)
+        json.dump({"answers": answers}, f, indent=4)
 
 progress_file = 'progress.json'
 results = load_progress(progress_file)
 
+# Filter out questions for specific conditions
+question_data["questions"] = [ question for question in question_data["questions"] if question['category'] != 'faq' ]
 
 for question in tqdm(question_data["questions"]):
     qid = question["qid"]
@@ -150,12 +195,9 @@ for question in tqdm(question_data["questions"]):
     question_text = question["query"]
     file_ids = question["source"]
 
-    result = analyze_files_in_batch(question_text, file_ids, question['category'], ground_truths[qid])
+    result = analyze_files_in_batch(question_text, file_ids, question['category'], None)
     results[qid] = result
     save_progress(progress_file, results)
 
-    # Calculate accuracy
-    accuracy = calculate_accuracy(results, ground_truths)
-    print(f"Accuracy: {accuracy * 100:.2f}%")
-
     sleep(8)
+
