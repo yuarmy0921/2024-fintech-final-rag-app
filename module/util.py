@@ -41,9 +41,9 @@ class PDFProcessor:
     """A class combining several processing functions for PDF files."""
     def __init__(self):
         """Prepare some variables."""
-        self.raw_dir = 'data/raw'
-        self.tmp_dir = 'data/tmp'
-        self.cleaned_dir = 'data/cleaned'
+        self.raw_dir = '../data/raw'
+        self.tmp_dir = '../data/tmp'
+        self.cleaned_dir = '../data/cleaned'
 
     def _extract_text(self, file: str) -> str:
         """Extract plain text from the given file."""

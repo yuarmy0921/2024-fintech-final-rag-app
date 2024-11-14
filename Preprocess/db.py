@@ -47,12 +47,12 @@ def create_doc(category: str, no: int):
 
     neo4j.link_chunk_batch(category, no, len(chunks))
 
-def create_files_from_json(path='data/raw/faq/pid_map_content.json'):
+def create_files_from_json(path='../data/raw/faq/pid_map_content.json'):
     """Convert .txt files from the given .json file"""
     with open(path, 'r') as f:
         struct = json.load(f)
 
-    cleaned_path = 'data/cleaned/faq'
+    cleaned_path = '../data/cleaned/faq'
 
     for no, content in struct.items():
         data = ''
@@ -90,7 +90,7 @@ if __name__ == '__main__':
         create_doc(category, i)
 
     category = 'faq'
-    cleaned_path = 'data/cleaned/faq'
+    cleaned_path = '../data/cleaned/faq'
     print('================ FAQ ==================')
     for no in range(617):
         # update_embeddings(category, i)
