@@ -6,7 +6,7 @@ import json
 import os, sys
 import pdfplumber
 
-BASE = Path("../final_project_dataset")
+BASE = Path(".")
 PROMPT2 = """請再重新想一次。如果你認同之前的判斷，請告訴我最能回答此問題的文本編號。
 如果你不認同上述判斷，請再次判斷後，選出能回答此問題的文本編號。
 記得，只會有正好一個答案。如果有多個可能的答案，選一個最合適的。回應編號即可，不要有其他文字。"""
@@ -14,8 +14,8 @@ PROMPT2 = """請再重新想一次。如果你認同之前的判斷，請告訴�
 API_KEY = ""
 genai.configure(api_key = API_KEY)
 
-faq_data = json.loads((BASE / "reference" / "faq" / "pid_map_content.json").read_text())
-question_data = json.loads(Path("../questions_preliminary.json").read_text())
+faq_data = json.loads((BASE / "raw" / "faq" / "pid_map_content.json").read_text())
+question_data = json.loads(Path("./questions_preliminary.json").read_text())
 
 # Initialize Gemini Model
 model = genai.GenerativeModel('gemini-1.5-flash')
@@ -90,8 +90,8 @@ def analyze_files_in_batch(question, file_ids, category, ground_truth=None):
                 contents[str(file_id)] += f"問：{item['question']}\n"
                 contents[str(file_id)] += f"答：{' '.join(item['answers'])}\n\n"
         else:
-            filepath = BASE / "reference" / category / f"{file_id}.pdf"
-            filepath_ocr = BASE / "reference" / category / f"{file_id}-output.pdf"
+            filepath = BASE / "raw" / category / f"{file_id}.pdf"
+            filepath_ocr = BASE / "raw" / category / f"{file_id}-output.pdf"
 
             try:
                 contents[file_id] = read_pdf(filepath_ocr) if filepath_ocr.exists() else read_pdf(filepath)

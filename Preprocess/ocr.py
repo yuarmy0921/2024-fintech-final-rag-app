@@ -115,6 +115,6 @@ def main(directory_path):
         list(tqdm(pool.imap(process_file, pdf_files), total=len(pdf_files), desc="Processing PDF files"))
 
 
-directory_path = Path("./final_project_dataset/reference")
+directory_path = Path("./data/raw")
 # directory_path = Path(".")
 main(directory_path)
