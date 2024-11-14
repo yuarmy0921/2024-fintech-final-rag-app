@@ -27,6 +27,7 @@ neo4j.set_chunk_size(chunk_size)
 neo4j.set_chunk_overlap(chunk_overlap)
 
 def create_doc(category: str, no: int):
+    """Add the document information to the database."""
     print(f'Document {no}:')
     print(' extract content...')
     text = processor.extract_content(category, f'{no}.pdf')
@@ -47,6 +48,7 @@ def create_doc(category: str, no: int):
     neo4j.link_chunk_batch(category, no, len(chunks))
 
 def create_files_from_json(path='data/raw/faq/pid_map_content.json'):
+    """Convert .txt files from the given .json file"""
     with open(path, 'r') as f:
         struct = json.load(f)
 
@@ -66,11 +68,11 @@ def create_files_from_json(path='data/raw/faq/pid_map_content.json'):
         with open(f'{cleaned_path}/{no}.txt', 'w') as f:
             f.write(data)
 
-def update_embeddings(category: str, no: int):
-    print(f'Document {no}')
-    text = neo4j.get_doc_text(category, no)
-    embeddings = [gemini.get_text_embedding({'title': category, 'content': chunk}) for chunk in text]
-    neo4j.set_doc_embeddings(category, no, embeddings)
+# def update_embeddings(category: str, no: int):
+#     print(f'Document {no}')
+#     text = neo4j.get_doc_text(category, no)
+#     embeddings = [gemini.get_text_embedding({'title': category, 'content': chunk}) for chunk in text]
+#     neo4j.set_doc_embeddings(category, no, embeddings)
 
 
 if __name__ == '__main__':

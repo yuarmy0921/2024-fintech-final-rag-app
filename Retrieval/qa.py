@@ -1,4 +1,5 @@
 import json
+import numpy as np
 import argparse, sys
 
 sys.path.append("..")
@@ -16,12 +17,14 @@ neo4j.set_chunk_overlap(chunk_overlap)
 reranker = Reranker()
 
 def find_best_document(query: list[float], embeddings: list[list[float]]) -> int:
+	"""Find the best document for a query."""
 	dot_products = np.dot(np.stack(embeddings), query)
 	idx = np.argmax(dot_products)
 
 	return idx
 
 def find_best_document_top_k(query: list[float], embeddings: list[list[float]], k=3) -> int:
+	"""Find top-k best documents for a query."""
 	k = min(k, len(embeddings))
 	dot_products = np.dot(np.stack(embeddings), query)
 	topk = np.argpartition(dot_products, -k)[-k:]
@@ -29,6 +32,7 @@ def find_best_document_top_k(query: list[float], embeddings: list[list[float]], 
 	return topk
 
 def get_ans(query: list[float], source: list[int]) -> int:
+	"""Get the answer to a query."""
 	num_of_chunks = []
 	embed_doc_search = []
 
@@ -47,6 +51,7 @@ def get_ans(query: list[float], source: list[int]) -> int:
 			return question['source'][i]
         
 def get_ans_rerank(category: str, query_text: str, query_embedding: list[float], source: list[int]) -> int:
+	"""Get the answer to a query. Return the document with the highest score after reranking."""
 	num_of_chunks = []
 	embed_doc_search = []
 

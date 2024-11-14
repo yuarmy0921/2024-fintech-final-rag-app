@@ -32,20 +32,21 @@ from google.cloud import discoveryengine_v1 as discoveryengine
 
 from langchain_community.graphs import Neo4jGraph
 
-import numpy as np
-
 from pathlib import Path
 
 path = Path(os.path.realpath(__file__))
 load_dotenv(str(path.parent.absolute()) + '/.env', override=True)
 
 class PDFProcessor:
+    """A class combining several processing functions for PDF files."""
     def __init__(self):
+        """Prepare some variables."""
         self.raw_dir = 'data/raw'
         self.tmp_dir = 'data/tmp'
         self.cleaned_dir = 'data/cleaned'
 
     def _extract_text(self, file: str) -> str:
+        """Extract plain text from the given file."""
         pdf = pdfplumber.open(file)
         pages = pdf.pages
         pdf_text = ''
@@ -62,6 +63,7 @@ class PDFProcessor:
     #     return doc.GetText()
 
     def _extract_img(self, category: str, major_no: str, doc: Document) -> list:
+        """Extract images from the .docx file."""
         # Create a Queue object
         nodes = queue.Queue()
         nodes.put(doc)
@@ -97,17 +99,11 @@ class PDFProcessor:
 
         return images
 
-    def _extract_text_from_img(self):
-        file = f'{self.cleaned_dir}/finance/1-2.png'
-        pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
-
-        img = Image.open(file)
-        print(pytesseract.image_to_string(img, lang="chi_tra+eng"))
-
     def _extract_table(self):
         pass
 
     def _apply_ocr(self, src: str, dst: str):
+        """Apply OCR to the given file."""
         try:
             # Run the ocrmypdf command
             subprocess.run(
@@ -119,6 +115,7 @@ class PDFProcessor:
             print(f"Error during OCR for {src}: {e}")
 
     def extract_content(self, category: str, filename: str):
+        """Extract relevant information from the given file."""
         major_no = filename[:-4]
         path_to_raw = f'{self.raw_dir}/{category}/{filename}'
         path_to_cleaned = f'{self.cleaned_dir}/{category}/{filename}'
@@ -148,7 +145,7 @@ class PDFProcessor:
         '''
 
 class GeminiAPI:
-    def __init__(self, model='models/embedding-004'):
+    def __init__(self, model='models/embedding-001'):
         key = os.getenv('GEMINI_API_KEY')
         genai.configure(api_key=key)
 
@@ -166,7 +163,9 @@ class GeminiAPI:
         return embedding
 
 class VertexAIAPI:
+    """A class combining several Vertex AI functions."""
     def __init__(self):
+        """Prepare some variables."""
         PROJECT_ID = os.getenv('PROJECT_ID')
         REGION = os.getenv('REGIOM')
         MODEL_ID = 'text-multilingual-embedding-002'
@@ -176,6 +175,7 @@ class VertexAIAPI:
         self.model = TextEmbeddingModel.from_pretrained(MODEL_ID)
 
     def get_text_embedding_batch(self, title: str, text_list: list[str]) -> list[list[float]]:
+        """Get text embeddings in batch."""
         task = 'RETRIEVAL_DOCUMENT'
         inputs = [TextEmbeddingInput(text, task, title) for text in text_list]
         length = len(inputs)
@@ -199,6 +199,7 @@ class VertexAIAPI:
         return [embedding.values for embedding in embeddings]
     
     def get_query_embedding_batch(self, query_list: list[str]) -> list[list[float]]:
+        """Get query embeddings in batch."""
         task = 'RETRIEVAL_QUERY'
         inputs = [TextEmbeddingInput(query, task) for query in query_list]
         length = len(inputs)
@@ -206,15 +207,10 @@ class VertexAIAPI:
 
         return [embedding.values for embedding in embeddings]
     
-    def find_best_document(self, query: list[float], embeddings: list[list[float]]) -> int:
-        dot_products = np.dot(np.stack(embeddings), query)
-        # print('dot:', dot_products)
-        idx = np.argmax(dot_products)
-
-        return idx
-    
 class Reranker:
+    """A class for reranking documents."""
     def __init__(self):
+        """Prepare some variables."""
         PROJECT_ID = os.getenv('PROJECT_ID')
         self.client = discoveryengine.RankServiceClient()
         self.ranking_config = self.client.ranking_config_path(
@@ -224,6 +220,7 @@ class Reranker:
         )
 
     def rerank(self, category: str, query: str, records: list):
+        """Rerank documents."""
         ranking_records = [
             discoveryengine.RankingRecord(
                 id=record['id'],
@@ -247,7 +244,9 @@ class Reranker:
         return response.records
 
 class Neo4jAPI:
+    """A class for manipulating Neo4j database."""
     def __init__(self):
+        """Prepare some variables."""
         NEO4J_URI = os.getenv('NEO4J_URI')
         NEO4J_USERNAME = os.getenv('NEO4J_USERNAME')
         NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD')
@@ -284,6 +283,7 @@ class Neo4jAPI:
         return self.kg.query(query, params)
     
     def merge_doc(self, category: str, no: int):
+        """Create Document node if it doesn't exist."""
         query = f"""
         MERGE (:Document:{category} {{no: $no}})
         """
@@ -291,6 +291,7 @@ class Neo4jAPI:
         self.kg.query(query, params={'no': no})
 
     def merge_chunk(self, category: str, doc_no: int, seq: int, text: str, embedding: list):
+        """Create Chunk node if it doesn't exist."""
         seq_no = self._get_chunk_seq_no(doc_no, seq)
         query = f"""
         MERGE (chunk:Chunk:{category} {{seq_no: $seq_no}})
@@ -305,6 +306,7 @@ class Neo4jAPI:
         self.kg.query(query, params={'seq_no': seq_no, 'text': text, 'embedding': embedding})
 
     def link_chunk_batch(self, category: str, doc_no: int, chunks: int):
+        """Link Document and Chunk nodes if the links don't exist."""
         query = f"""
         MATCH (doc:Document:{category} {{no: $no}})
         MATCH (chunk:Chunk:{category} {{seq_no: $seq_no}})
@@ -326,6 +328,7 @@ class Neo4jAPI:
             last_seq_no = seq_no
 
     def get_doc_embeddings(self, category: str, no: int):
+        """Get Document text embeddings."""
         query = f"""
         MATCH (:Document:{category} {{no: $no}})-[:has_root {{chunk_size: {self.chunk_size}, chunk_overlap: {self.chunk_overlap}}}]->(chunk0:Chunk:{category})
         RETURN chunk0.embed_retrieval_document as embedding
@@ -343,6 +346,7 @@ class Neo4jAPI:
         return embeddings
     
     def get_chunk_text(self, category: str, no: int, seq: int):
+        """Get Chunk text embeddings."""
         seq_no = self._get_chunk_seq_no(no, seq)
         query = f"""
         MATCH (chunk:Chunk:{category} {{seq_no: $seq_no}}) 
@@ -353,6 +357,7 @@ class Neo4jAPI:
         return text
     
     def get_doc_text(self, category: str, no: int):
+        """Get Document text."""
         query = f"""
         MATCH (:Document:{category} {{no: $no}})-[:has_root {{chunk_size: {self.chunk_size}, chunk_overlap: {self.chunk_overlap}}}]->(chunk0:Chunk:{category})
         RETURN chunk0.text as text
@@ -370,6 +375,7 @@ class Neo4jAPI:
         return text
     
     def set_doc_embeddings(self, category: str, no: int, embeddings: list):
+        """Set Document embeddings."""
         query = f"""
         MATCH (chunk:Chunk:{category} {{seq_no: $seq_no}})
         SET chunk.embed_retrieval_document = $embed
